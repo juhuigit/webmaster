@@ -1,0 +1,58 @@
+<div class="my-5">
+    <h1 class="text-center mb-5">게시글 정보</h1>
+    <div id="btn-group" class = "text-end mb-2" style="display: none;">
+        <button id="btn-update" class="btn btn-warning btn-sm">수정</button>
+        <button id="btn-delete" class="btn btn-danger btn-sm">삭제</button>
+    </div>
+    <div id="div_post"></div>
+    <%-include('comments.ejs')%>
+</div>
+
+<script id="temp_post" type="x-handlebars-template">
+    <div class="card">
+        <div class = "card-body">
+            <h5>{{title}}</h5>
+            <hr>
+            <div>{{body}}</div>
+        </div>
+        <div class="card-footer">
+            <small>작성자: {{email}}</small>
+            <small>작성일: {{date}}</small>
+        </div>
+    </div>
+</script>
+<script type="module">
+    import { app } from "/javascripts/firebase.js";
+    import { getFirestore, doc, getDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-firestore.js";
+
+    const db = getFirestore(app);
+    // <% %> : 서버에 있는 id 값 출력(=) 해서 const id에 저장
+    // routes -> posts -> id 변수
+    const id = "<%=id%>";
+
+    const snapshot = await getDoc(doc(db, `posts/${id}`));
+    // console.log(snapshot.data());
+
+    const temp = Handlebars.compile($("#temp_post").html());
+    $("#div_post").html(temp(snapshot.data()));
+
+    const post = snapshot.data();
+    // 로그인 한 사람이, 글 쓴 사람과 같을 때만 수정 및 삭제 버튼이 보임.
+    if(sessionStorage.getItem("email")==post.email){
+        $("#btn-group").show();
+    }
+
+    $("#btn-delete").on("click", async function(){
+        if(confirm(`${id}번 게시글을 삭제하실래요?`)){
+            // 삭제
+            await deleteDoc(doc(db, `posts/${id}`));
+            alert("삭제 되었습니다.")
+            location.href="/posts"
+        }
+    });
+
+    $("#btn-update").on("click", function(){
+        location.href=`/posts/update?id=${id}`;
+    });
+    
+</script>

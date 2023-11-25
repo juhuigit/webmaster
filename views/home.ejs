@@ -1,0 +1,180 @@
+<style>
+    #div_books img {
+        cursor: pointer;
+    }
+
+    #div_books .bi-cart2{
+        cursor: pointer;
+        color:skyblue;
+        font-size: 1.5rem;
+    }
+</style>
+
+
+<div class="row my-5">
+    <div class="col">
+        <!-- 검색폼 -->
+        <div class="row mb-2 justify-content-end">
+            <form name="frm" class="col-6 col-md-4 col-lg-3">
+                <div class="input-group">
+                    <input name="query" class="form-control" value="자바">
+                    <button class="btn btn-info">검색</button>
+                </div>
+            </form>
+        </div>
+        <!-- 도서검색결과-->
+        <div id="div_books" class="row"></div>
+        <!-- 페이지 이동버튼 -->
+        <div class="text-center">
+            <button id="prev" class="btn btn-info">이전</button>
+            <span id="span_page" class="mx-3">1/10</span>
+            <button id="next" class="btn btn-info">다음</button>
+        </div>
+    </div>
+</div>
+<!-- 도서검색 템플릿 -->
+<script type="x-handlebars-template" id="temp_books">
+    {{#each documents}}
+        <div class="col-6 cod-md-4 col-lg-2 mb-3">
+            <div class="card">
+                    <div class="card-body">
+                        <!-- @index : 자동으로 0,1,2, ... 숫자 생성 -->
+                        <!-- 썸네일 이미지를 클릭하면 div_books로 들어감. -->
+                        <!-- check : 하단에 작성한 함수 이름 -->
+                        <!-- // index는 0부터 들어감 -->
+                        <img src="{{check thumbnail}}" width="90%" index="{{@index}}">
+                        
+                        <div class="ellipsis pt-3" style="font-size:0.8rem;">
+                            {{title}}
+                        </div>
+                </div>
+                <div class ="card-footer">
+                    {{format price}}
+                    <!-- // 핸들바에서 제공하는것 this -> object, but 스트링으로 들어가야함. 따라서 book함수 생성 -->
+                    <i class="cart bi-cart2 float-end" book1 = "{{book @this}}"></i>   
+                </div>
+            </div>
+        </div>
+        <%-include('books/modal.ejs')%>
+    {{/each}} 
+</script>
+
+<script>
+    Handlebars.registerHelper("check", function(thumbnail){
+        if(thumbnail){
+            return thumbnail; //true
+        }else {
+            return "http://via.placeholder.com/120x170";
+        }
+    });
+
+    Handlebars.registerHelper("format", function(price){
+        return price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',') + '원';
+    });
+
+    // 위에 @this 오브젝트가 book 매개변수로 들어감.  -> string으로 변환함.
+    Handlebars.registerHelper("book", function(book){
+        return JSON.stringify(book);    // object => String 변환
+    })
+</script>
+
+<!-- import 하기 위해서는 type이 module 넣어줘야함. 빵꾸!! -->
+<script type="module">
+    import { app } from "/javascripts/firebase.js";
+    import { getDatabase, ref, set, get } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-database.js";
+    const db = getDatabase(app);
+    // app 빵꾸 !! 
+
+    let query=$(frm.query).val();
+    let page=1;
+    //함수선언
+    getBooks();
+
+    // 장바구니 아이콘을 클릭한 경우
+    // .cart : class 이름이라서 .
+    $("#div_books").on("click", ".cart", async function(){
+        if(!sessionStorage.getItem("uid")) {
+            location.href = "/users/login";
+            return;
+        }
+
+        // <i class="bi bi-cart4 float-end" book1 = "{{book @this}}"></i>
+        // 위에 i 태그의 어트리부트인 book1을 가져옴. attr("book1") 빵꾸!
+        const book = JSON.parse($(this).attr("book1"));
+        console.log(book);
+        // cart 밑에 uid 밑에 book의 isbn에 데이터를 넣어주겠다 !
+        const ref_cart = ref(db, `cart/${sessionStorage.getItem("uid")}/${book.isbn}`);
+
+        // 장바구니에 있는지 체크
+        // result : 꺼내온 결과, get : 가져오기
+        const result = await get(ref_cart);
+        console.log(result.val());
+        if(result.val()){
+            alert("이미 장바구니에 있습니다.");
+        } else {
+            if(!confirm("장바구니에 추가하시겠습니까?")) return;
+            set(ref_cart, book);
+            alert("장바구니에 추가되었습니다.");
+        }
+
+    })
+
+    // 이미지를 클릭한 경우
+    $("#div_books").on("click", "img", function(){
+        let index=$(this).attr("index");
+        $("#modal" + index).modal("show");
+    });
+
+    // name을 셀렉트 할 때는 아무것도 안붙음
+    // submit(번쩍) 하는거 안하게끔 하는 코드
+    // 시험 예시 : frm 비워두고 적기
+    $(frm).on("submit", function(e){
+        e.preventDefault();
+        query=$(frm.query).val();
+        // 시험 예시 : frm.query 비워두기
+        page=1;
+        getBooks();
+        // getBooks(); 자리 비워두기 
+    });
+
+    // 다음 버튼을 클릭한 경우
+    $("#next").on("click", function(){
+        page++;
+        getBooks();
+    });
+
+    // 이전 버튼을 클릭한 경우
+    $("#prev").on("click", function(){
+        page--;
+        getBooks();
+    });
+
+    function getBooks(){
+        //jquery 이용, $ = jquery 선택자
+        //ajax 형식 $.ajax({}) 암기
+        $.ajax({
+            type:"get",
+            url:"https://dapi.kakao.com/v3/search/book?target=title",
+            headers:{"Authorization":"KakaoAK 268ad2d02cdbe6617c11fd136c2b2373"},
+            data:{query:query, page:page, size:6}, //size는 12의 최대공약수
+            success:function(result){
+                console.log(result) // 6개 불러온 책이 result로 값이 들어감.(콘솔에서 확인)
+                // html로 컴파일
+                let temp=Handlebars.compile($("#temp_books").html()) //#은 id 선택자
+                // 시험 예시 : #temp_books 자리를 비워두면 쓰기
+                // 답이 문제 안에 다 있게 할 것임.
+                $("#div_books").html(temp(result));
+                
+                let last = Math.ceil(result.meta.pageable_count/6);
+                $("#span_page").html(page + "/" + last);
+                // 시험 예시 : #div_books, result 자리 비워두면 쓰기
+
+                if(page==1) $("#prev").attr("disabled", true)
+                else $("#prev").attr("disabled", false)
+
+                if(result.meta.is_end) $("#next").attr("disabled", true)
+                else $("#next").attr("disabled", false)
+            }
+        });
+    }
+</script>

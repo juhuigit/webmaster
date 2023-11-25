@@ -1,0 +1,58 @@
+<nav class="navbar navbar-expand-lg bg-info" data-bs-theme="dark">
+  <div class="container-fluid">
+    <a class="navbar-brand" href="/">HOME</a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+        <li class="nav-item">
+          <a class="nav-link active" aria-current="page" href="/books">도서검색</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link active" aria-current="page" href="/locals">지역검색</a>
+        </li>
+        <li class="nav-item" id = "cart" style="display: none;">
+          <a class="nav-link active" aria-current="page" href="/books/cart">장바구니</a>
+        </li>
+        <li class="nav-item" id = "favorite" style="display: none;">
+          <a class="nav-link active" aria-current="page" href="/locals/favorite">즐겨찾기</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link active" aria-current="page" href="/posts">게시판</a>
+        </li>
+      </ul>
+      <ul class="navbar-nav d-flex">
+          <li class="nav-item" id = "login">
+            <a class="nav-link active" aria-current="page" href="/users/login">로그인</a>
+          </li>
+          <li class="nav-item" id="email" style="display: none;">
+            <a class="nav-link active" aria-current="page" href="/users/mypage">email</a> 
+          </li>
+          <li class="nav-item" id="logout" style="display: none;">
+            <a class="nav-link active" aria-current="page" href="/users/login">로그아웃</a> 
+          </li>
+        </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- toggle : 반전-->
+<script>
+  if(sessionStorage.getItem("email")){
+    $("#login, #email, #logout, #cart ,#favorite").toggle(); // 반대로 바뀜.
+    // emali에 a태그
+    $("#email a").html(sessionStorage.getItem("email"));
+  }
+
+  // 로그아웃 메뉴에 a태그를 눌렀을 때
+  $("#logout").on("click","a", function(event){
+      event.preventDefault();
+      if(confirm("정말로 로그아웃 하시겠습니까?")){
+        sessionStorage.clear();
+        location.href="/"; // 루트로 이동
+      } else {
+        alert("로그아웃을 하지 않으셨습니다.")
+      }
+  })
+</script>

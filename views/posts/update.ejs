@@ -1,0 +1,43 @@
+<div class="my-5">
+    <h1 class="text-center mb-5"><%=title%></h1>
+    <div id="div_post"></div>
+</div>
+<script id="temp_post" type="x-handlebars-template">
+    <form name="frm">
+        <input value="{{title}}"
+            name="title" placeholder="제목을 입력하세요." class="form-control mb-2">
+        <textarea name="body" placeholder="내용을 입력하세요." rows="10" class="form-control">{{body}}</textarea>
+        <div class="text-center my-3">
+            <button class="btn btn-warning px-5" type="submit">수정</button>
+            <button class="btn btn-secondary px-5" type="reset">취소</button>
+        </div>
+    </form>
+</script>
+
+<script type="module">
+    import { app } from "/javascripts/firebase.js";
+    import { getFirestore } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-firestore.js";
+    import { doc, getDoc, deleteDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-firestore.js";
+    const db = getFirestore(app);
+
+    const id = "<%=id%>";
+    const snapshot = await getDoc(doc(db, `posts/${id}`));
+    const post = snapshot.data();
+    console.log(post);
+
+    const temp = Handlebars.compile($("#temp_post").html());
+    $("#div_post").html(temp(post));
+
+    $(frm).on("submit", async function(e){
+        e.preventDefault();
+        if(confirm(`${id}번 게시글을 수정하실래요?`)){
+            // 수정작업
+            const title = $(frm.title).val();
+            const body = $(frm.body).val();
+            const data = {...post, title, body};
+            await setDoc(doc(db, `posts/${id}`), data);
+            alert("수정되었습니다.")
+            location.href="/posts";
+        }
+    });
+</script>

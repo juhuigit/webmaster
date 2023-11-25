@@ -1,0 +1,71 @@
+<style>
+  form span{
+      width:100px;
+  }
+</style>
+
+<div class="row my-5 justify-content-center">
+  <div class="col-md-6">
+      <h1 class="text-center">로그인</h1>
+      <form name="frm" class="card p-3">
+          <div class="input-group mb-3">
+              <span class="input-group-text">이메일</span>
+              <input name="email" class="form-control" value="blue@test.com">
+          </div>
+          <div class="input-group mb-3">
+              <span class="input-group-text">비밀번호</span>
+              <input name="password" class="form-control" type="password" value="12341234">
+          </div>
+          <button class="btn btn-info">로그인</button>
+      </form>
+      <div class="text-end pt-2">
+          <a href="/users/join">회원가입</a>
+      </div>
+
+      
+  </div>
+</div>
+
+<script type="module">
+    // { app } -> firebase에서 export해주었기 때문에 import해서 사용 가능.
+  import { app } from "/javascripts/firebase.js";
+  import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-auth.js";
+
+  // app 또는 auth 빵꾸 뚫어놓으면 찾아 넣기 !
+  const auth = getAuth(app);
+
+// frm 은 name이라서 아무것도 안붙임.
+  $(frm).on("submit",function(event){
+      event.preventDefault(); 
+
+      // 유효성 체크
+      const email=$(frm.email).val();
+      const password=$(frm.password).val();
+      if(email == ""){
+          alert("이메일을 입력하세요!");
+          $(frm.email).focus();
+      } else if(password == ""){
+          alert("비밀번호를 입력하세요!");
+          $(frm.password).focus();
+      } else {
+          // 로그인 체크!
+          // alert(email + password);
+          signInWithEmailAndPassword(auth, email, password).then(success=>{
+              console.log(success);
+              sessionStorage.setItem("email", email);
+              sessionStorage.setItem("uid", success.user.uid);
+              alert("로그인에 성공했습니다.");
+              
+              if(sessionStorage.getItem("target")) {
+                location.href = sessionStorage.getItem("target");
+              } else {
+                location.href="/"; // 루트로 이동 -> 위에 상태가 변경 되어야함. -> menu.ejs에서 변동
+              }
+             
+          }).catch(error=>{
+              console.log(error);
+              alert(error.message);
+          })
+      }
+  });
+</script>
